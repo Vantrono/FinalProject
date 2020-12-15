@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour
 {
@@ -10,6 +12,12 @@ public class PlayerController : MonoBehaviour
     private const int maxJump = 2;
     private int currentJump = 0;
     private int score;
+
+    public AudioSource starPickUp;
+    public GameObject youWinText;
+    public float resetDelay;
+
+    public Text starUI;
 
 
     [SerializeField]
@@ -30,6 +38,7 @@ public class PlayerController : MonoBehaviour
     {
         rigidbody = GetComponent<Rigidbody>();
         collider = GetComponent<Collider>();
+        starPickUp = GetComponent<AudioSource>();
     }
 
     private void FixedUpdate()
@@ -75,7 +84,7 @@ public class PlayerController : MonoBehaviour
     {
         input.x = Input.GetAxisRaw("Horizontal");
         input.y = Input.GetAxisRaw("Vertical");
-
+        // To make it so you can only double jump
         if (Input.GetKeyDown(KeyCode.Space) && (onGround || maxJump > currentJump))
         {
             rigidbody.AddForce(new Vector3(0, jumpForce, 0), ForceMode.Impulse);
@@ -83,10 +92,11 @@ public class PlayerController : MonoBehaviour
             currentJump++;
         }
 
-
+        starUI.text = "You need " + (5-score) + " star(s) left to win!";
     }
     private void OnCollisionEnter(Collision collision)
     {
+        // Grounded to tell it that the player can jump again
         onGround = true;
         currentJump = 0;
     }
@@ -95,14 +105,24 @@ public class PlayerController : MonoBehaviour
     {
         if (other.CompareTag("Star"))
         {
-            
+            starPickUp.Play();
             Destroy(other.gameObject);
             score++;
             if (score == 5)
             {
-                Debug.Log("WIN");
+                //Turn on UI and reset game after certain amount of time.
+                youWinText.SetActive(true);
+                GameObject.Find("Player").SendMessage("Finish");
+                Invoke("Reset", resetDelay);
+
             }
         }
 
     }
+    private void Reset()
+    {
+        SceneManager.LoadScene("Game");
+    }
+
+
 }
